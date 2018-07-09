@@ -162,9 +162,6 @@ static int gpu_dvfs_governor_interactive(struct exynos_context *platform, int ut
 		platform->down_requirement = platform->table[platform->step].down_staycount;
 	}
 
-	DVFS_ASSERT((platform->step >= gpu_dvfs_get_level(platform->gpu_max_clock))
-					&& (platform->step <= gpu_dvfs_get_level(platform->gpu_min_clock)));
-
 	return 0;
 }
 
