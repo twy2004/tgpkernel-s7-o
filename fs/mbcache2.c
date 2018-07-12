@@ -65,13 +65,14 @@ static inline struct hlist_bl_head *mb2_cache_entry_referenced(struct mb2_cache_
  * @mask - gfp mask with which the entry should be allocated
  * @key - key of the entry
  * @block - block that contains data
+ * @reusable - is the block reusable by other inodes?
  *
  * Creates entry in @cache with key @key and records that data is stored in
  * block @block. The function returns -EBUSY if entry with the same key
  * and for the same block already exists in cache. Otherwise 0 is returned.
  */
 int mb2_cache_entry_create(struct mb2_cache *cache, gfp_t mask, u32 key,
-			   sector_t block)
+			   sector_t block, bool reusable)
 {
 	struct mb2_cache_entry *entry, *dup;
 	struct hlist_bl_node *dup_node;
@@ -94,6 +95,7 @@ int mb2_cache_entry_create(struct mb2_cache *cache, gfp_t mask, u32 key,
 	atomic_set(&entry->e_refcnt, 1);
 	entry->e_key = key;
 	entry->e_block = block;
+	entry->e_reusable = reusable;
 	head = mb2_cache_entry_head(cache, key);
 	hlist_bl_lock(head);
 	hlist_bl_for_each_entry(dup, dup_node, head, e_hash_list) {
@@ -140,7 +142,7 @@ static struct mb2_cache_entry *__entry_find(struct mb2_cache *cache,
 	while (node) {
 		entry = hlist_bl_entry(node, struct mb2_cache_entry,
 				       e_hash_list);
-		if (entry->e_key == key) {
+		if (entry->e_key == key && entry->e_reusable) {
 			atomic_inc(&entry->e_refcnt);
 			goto out;
 		}
@@ -171,6 +173,35 @@ struct mb2_cache_entry *mb2_cache_entry_find_first(struct mb2_cache *cache,
 EXPORT_SYMBOL(mb2_cache_entry_find_first);
 
 /*
+ * mb2_cache_entry_get - get a cache entry by block number (and key)
+ * @cache - cache we work with
+ * @key - key of block number @block
+ * @block - block number
+ */
+struct mb2_cache_entry *mb2_cache_entry_get(struct mb2_cache *cache, u32 key,
+					  sector_t block)
+{
+	struct hlist_bl_node *node;
+	struct hlist_bl_head *head;
+	struct mb2_cache_entry *entry;
+
+	head = mb2_cache_entry_head(cache, key);
+	hlist_bl_lock(head);
+	hlist_bl_for_each_entry(entry, node, head, e_hash_list) {
+		if (entry->e_key == key && entry->e_block == block) {
+			atomic_inc(&entry->e_refcnt);
+			goto out;
+		}
+	}
+	entry = NULL;
+out:
+	hlist_bl_unlock(head);
+	return entry;
+}
+EXPORT_SYMBOL(mb2_cache_entry_get);
+
+
+/*
  * mb2_cache_entry_find_next - find next entry in cache with the same
  * @cache: cache where we should search
  * @entry: entry to start search from
@@ -189,8 +220,8 @@ EXPORT_SYMBOL(mb2_cache_entry_find_next);
 
 /* mb2_cache_entry_delete_block - remove information about block from cache
  * @cache - cache we work with
- * @key - key of the entry to remove
- * @block - block containing data for @key
+ * @key - key of block @block
+ * @block - block number
  *
  * Remove entry from cache @cache with key @key with data stored in @block.
  */
