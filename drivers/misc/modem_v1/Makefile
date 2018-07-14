@@ -1,7 +1,7 @@
 # Makefile of modem_v1
 
 EXTRA_CFLAGS += -Idrivers/misc/modem_v1 \
-		-DCONFIG_OPTION_REGION=\"$(PROJECT_REGION)\"
+		-DCONFIG_OPTION_REGION=\"kor_skt\"
 
 obj-y += modem_main.o modem_variation.o modem_io_device.o modem_utils.o
 
