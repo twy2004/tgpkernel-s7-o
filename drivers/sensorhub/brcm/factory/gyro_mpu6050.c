@@ -475,7 +475,7 @@ static ssize_t gyro_selftest_dps_store(struct device *dev,
 		goto exit;
 	}
 
-	mdelay(5);
+	usleep_range(5000, 5500);
 
 	if (data->uFactorydata[0] != SUCCESS) {
 		pr_err("[SSP]: %s - Gyro Selftest DPS Error!!\n", __func__);

@@ -173,7 +173,7 @@ reties:
 			goto exit;
 	}
 
-	mdelay(5);
+	usleep_range(5000, 5500);
 
 	iSF_X = (s16)((data->uFactorydata[0] << 8) + data->uFactorydata[1]);
 	iSF_Y = (s16)((data->uFactorydata[2] << 8) + data->uFactorydata[3]);
@@ -252,7 +252,7 @@ static ssize_t magnetic_check_cntl(struct device *dev,
 			goto exit;
 	}
 
-	mdelay(5);
+	usleep_range(5000, 5500);
 
 	if (!data->uFactorydata[0])
 		bSuccess = true;

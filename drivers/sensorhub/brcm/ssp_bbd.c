@@ -95,7 +95,7 @@ int bbd_do_transfer(struct ssp_data *data, struct ssp_msg *msg,
 	if (ssp_down) {
 		pr_err("[SSPBBD]: ssp_down == true. returning\n");
 		clean_msg(msg);
-		mdelay(5);
+		usleep_range(5000, 5500);
 		if (timeout) {
 			wake_unlock(&data->ssp_comm_wake_lock);
 		}
@@ -371,7 +371,7 @@ void bbd_mcu_ready_work_func(struct work_struct *work)
 retries:
 	ret = initialize_mcu(data);
 	if (ret != SUCCESS) {
-		mdelay(100);
+		msleep(100);
 		if (++retries > 3) {
 			pr_err("[SSPBBD] fail to initialize mcu\n");
 			ssp_enable(data, false);

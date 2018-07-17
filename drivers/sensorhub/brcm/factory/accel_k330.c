@@ -133,7 +133,7 @@ static int accel_do_calibrate(struct ssp_data *data, int iEnable)
 			iSum[0] += data->buf[ACCELEROMETER_SENSOR].x;
 			iSum[1] += data->buf[ACCELEROMETER_SENSOR].y;
 			iSum[2] += data->buf[ACCELEROMETER_SENSOR].z;
-			mdelay(10);
+			usleep_range(10000, 15000);
 		}
 		disable_accel_for_cal(data, iRet);
 
@@ -260,7 +260,7 @@ static ssize_t accel_reactive_alert_store(struct device *dev,
 			goto exit;
 		}
 
-		mdelay(5);
+		usleep_range(5000, 5500);
 
 		data->bAccelAlert = data->uFactorydata[0];
 		ssp_dbg("[SSP]: %s factory test success!\n", __func__);

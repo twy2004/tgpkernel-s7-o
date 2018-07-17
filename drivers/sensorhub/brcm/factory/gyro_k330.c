@@ -150,7 +150,7 @@ static ssize_t gyro_get_temp(struct device *dev,
 		goto exit;
 	}
 
-	mdelay(5);
+	usleep_range(5000, 5500);
 
 	chTemp = (char)data->uFactorydata[0];
 	ssp_dbg("[SSP]: %s - %d\n", __func__, chTemp);
@@ -185,7 +185,7 @@ static ssize_t gyro_selftest_show(struct device *dev,
 		pr_err("[SSP]: %s - Gyro Selftest Timeout!!\n", __func__);
 		goto exit;
 	}
-	mdelay(5);
+	usleep_range(5000, 5500);
 
 	iNOST[0] = (s16)((data->uFactorydata[0] << 8) + data->uFactorydata[1]);
 	iNOST[1] = (s16)((data->uFactorydata[2] << 8) + data->uFactorydata[3]);
@@ -279,7 +279,7 @@ static ssize_t gyro_selftest_dps_store(struct device *dev,
 		goto exit;
 	}
 
-	mdelay(5);
+	usleep_range(5000, 5500);
 
 	if (data->uFactorydata[0] != SUCCESS) {
 		pr_err("[SSP]: %s - Gyro Selftest DPS Error!!\n", __func__);
