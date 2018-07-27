@@ -2152,12 +2152,17 @@ static void putback_zspage(struct zs_pool *pool, struct size_class *class,
 
 static struct page *isolate_source_page(struct size_class *class)
 {
-	struct page *page;
-
-	page = class->fullness_list[ZS_ALMOST_EMPTY];
-	if (page)
-		remove_zspage(page, class, ZS_ALMOST_EMPTY);
-
+	int i;
+	struct page *page = NULL;
+	
+	for (i = ZS_ALMOST_EMPTY; i >= ZS_ALMOST_FULL; i--) {
+		page = class->fullness_list[i];
+		if (!page)
+			continue;
+		remove_zspage(page, class, i);
+		break;
+	}
+	
 	return page;
 }
 
