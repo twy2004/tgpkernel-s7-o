@@ -606,7 +606,7 @@ static int zs_stats_size_show(struct seq_file *s, void *v)
 				class->pages_per_zspage;
 
 		seq_printf(s, " %5u %5u %11lu %12lu %13lu"
-						" %10lu %10lu %16d\n",
+						" %10lu %10lu %16d %8lu\n",
 			i, class->size, class_almost_full, class_almost_empty,
 			obj_allocated, obj_used, pages_used,
 			class->pages_per_zspage, freeable);
