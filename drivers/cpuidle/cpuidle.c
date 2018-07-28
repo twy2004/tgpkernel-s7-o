@@ -122,18 +122,18 @@ int cpuidle_enter_state(struct cpuidle_device *dev, struct cpuidle_driver *drv,
 	int entered_state;
 
 	struct cpuidle_state *target_state = &drv->states[index];
-	ktime_t time_start, time_end;
+	u64 time_start, time_end;
 	s64 diff;
 
 	/* Take note of the planned idle state. */
 	sched_idle_set_state(target_state, index);
 
 	trace_cpu_idle_rcuidle(index, dev->cpu);
-	time_start = ktime_get();
+	time_start = local_clock();
 
 	entered_state = target_state->enter(dev, drv, index);
 
-	time_end = ktime_get();
+	time_end = local_clock();
 	trace_cpu_idle_rcuidle(PWR_EVENT_EXIT, dev->cpu);
 
 	/* The cpu is no longer idle or about to enter idle. */
@@ -142,7 +142,11 @@ int cpuidle_enter_state(struct cpuidle_device *dev, struct cpuidle_driver *drv,
 	if (!cpuidle_state_is_coupled(dev, drv, index))
 		local_irq_enable();
 
-	diff = ktime_to_us(ktime_sub(time_end, time_start));
+	/*
+	 * local_clock() returns the time in nanosecond, let's shift
+	 * by 10 (divide by 1024) to have microsecond based time.
+	 */
+	diff = (time_end - time_start) >> 10;
 	if (diff > INT_MAX)
 		diff = INT_MAX;
 
