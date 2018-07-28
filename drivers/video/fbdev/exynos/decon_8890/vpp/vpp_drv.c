@@ -576,7 +576,7 @@ err:
 static int vpp_tui_protection(struct v4l2_subdev *sd, int enable)
 {
 	struct vpp_dev *vpp = v4l2_get_subdevdata(sd);
-	int ret;
+	int ret=0;
 
 	if (test_bit(VPP_POWER_ON, &vpp->state)) {
 		dev_err(DEV, "VPP is not ready for TUI (%ld)\n", vpp->state);

@@ -3004,8 +3004,8 @@ int decon_wait_until_size_match(struct decon_device *decon,
 {
 	unsigned long delay_time = 100;
 	unsigned long cnt = timeout / delay_time;
-	u32 decon_yres, dsim_yres;
-	u32 decon_xres, dsim_xres;
+	u32 decon_yres=0, dsim_yres=0;
+	u32 decon_xres=0, dsim_xres=0;
 	u32 need_save = true;
 	struct disp_ss_size_info info;
 

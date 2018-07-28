@@ -669,7 +669,7 @@ static void asv_voltage_init_table(struct asv_table_list **asv_table, struct pwr
 	void *asv_block, *margin_block, *tim_block;
 	struct ect_timing_param_size *ect_mif;
 	struct ect_voltage_domain *domain;
-	struct ect_voltage_table *table;
+	struct ect_voltage_table *table=NULL;
 	struct asv_table_entry *asv_entry;
 	struct ect_margin_domain *margin_domain = NULL;
 	unsigned int max_asv_version = 0;
@@ -1054,9 +1054,9 @@ enum asv_group {
 
 int asv_get_information(enum dvfs_id id, enum asv_group grp, unsigned int lv) {
 
-	int max_lv, volt, group, asv;
+	int max_lv=0, volt=0, group=0, asv;
 	void *asv_block;
-	struct ect_voltage_domain *domain;
+	struct ect_voltage_domain *domain=NULL;
 
 	asv_block = ect_get_block("ASV");
 	if (asv_block == NULL)

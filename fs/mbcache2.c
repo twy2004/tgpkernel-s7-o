@@ -45,7 +45,7 @@ static struct kmem_cache *mb2_entry_cache;
 static unsigned long mb2_cache_shrink(struct mb2_cache *cache,
 				      unsigned int nr_to_scan);
 
-static inline struct hlist_bl_head *mb2_cache_entry_referenced(struct mb2_cache_entry *cache,
+static inline struct hlist_bl_head *mb2_cache_entry_head(struct mb2_cache_entry *cache,
 								u32 key)
 {
 	return &cache->c_hash[hash_32(key, cache->c_bucket_bits)];
@@ -300,7 +300,7 @@ static unsigned long mb2_cache_shrink(struct mb2_cache *cache,
 		 * from under us.
 		 */
 		spin_unlock(&cache->c_list_lock);
-		head = mb_cache_entry_head(cache, entry->e_key);
+		head = mb2_cache_entry_head(cache, entry->e_key);
 		hlist_bl_lock(head);
 		if (!hlist_bl_unhashed(&entry->e_hash_list)) {
 			hlist_bl_del_init(&entry->e_hash_list);

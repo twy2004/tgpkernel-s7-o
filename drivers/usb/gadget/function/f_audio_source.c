@@ -996,9 +996,9 @@ struct device *create_function_device(char *name);
 static struct usb_function_instance *audio_source_alloc_inst(void)
 {
 	struct audio_source_instance *fi_audio;
-	struct device_attribute **attrs;
+	struct device_attribute **attrs=NULL;
 	struct device_attribute *attr;
-	struct device *dev;
+	struct device *dev=NULL;
 	void *err_ptr;
 	int err = 0;
 

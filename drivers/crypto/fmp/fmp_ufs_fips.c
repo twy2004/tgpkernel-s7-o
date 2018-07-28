@@ -262,7 +262,7 @@ static dev_t find_devt_for_selftest(struct device *dev, struct Scsi_Host *host)
 	uint64_t size;
 	uint64_t size_list[MAX_SCAN_PART];
 	dev_t devt_list[MAX_SCAN_PART];
-	dev_t devt_scan, devt;
+	dev_t devt_scan, devt=0;
 	struct block_device *bdev;
 	fmode_t fmode = FMODE_WRITE | FMODE_READ;
 

@@ -460,12 +460,12 @@ static ssize_t store_cmd(struct device *dev, struct device_attribute *devattr,
 	info->cmd_is_running = true;
 	mutex_unlock(&info->cmd_lock);
 	info->cmd_state = 1;
-	memset(info->cmd_param, 0x00, ARRAY_SIZE(info->cmd_param));
+	memset(info->cmd_param, 0x00, sizeof(info->cmd_param));
 
 	len = (int)count;
 	if (*(buf + len - 1) == '\n')
 		len--;
-	memset(info->cmd, 0x00, ARRAY_SIZE(info->cmd));
+	memset(info->cmd, 0x00, sizeof(info->cmd));
 	memcpy(info->cmd, buf, len);
 	cur = strchr(buf, (int)delim);
 	if (cur)

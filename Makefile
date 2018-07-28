@@ -414,7 +414,12 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -mtune=exynos-m1 \
+		   -march=armv8-a+crc+crypto -mcpu=exynos-m1 -mtune=exynos-m1 \
+		   -fgcse-las -fgcse-sm -fgraphite -fgraphite-identity \
+		   -fipa-pta -fivopts -fomit-frame-pointer -frename-registers \
+		   -ftracer -fsection-anchors -ftree-loop-im -ftree-loop-ivcanon \
+		   -funsafe-loop-optimizations -funswitch-loops -fweb \
+		   -Wl,--sort-common -std=gnu89
 		   -std=gnu89
 
 KBUILD_AFLAGS_KERNEL :=
@@ -740,6 +745,7 @@ else
 # Use make W=1 to enable them (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
+KBUILD_CFLAGS += $(call cc-disable-warning, maybe-uninitialized)
 endif
 
 ifdef CONFIG_FRAME_POINTER

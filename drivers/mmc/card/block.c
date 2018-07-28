@@ -1218,7 +1218,7 @@ static int card_busy_detect(struct mmc_card *card, unsigned int timeout_ms,
 	int err = 0;
 	u32 status;
 	struct mmc_queue_req *mq_mrq;
-	struct mmc_blk_request *brq;
+	struct mmc_blk_request *brq=NULL;
 
 	if (card->host->areq) {
 		mq_mrq = container_of(card->host->areq, struct mmc_queue_req,

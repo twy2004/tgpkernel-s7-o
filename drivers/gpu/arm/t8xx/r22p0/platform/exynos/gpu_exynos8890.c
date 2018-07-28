@@ -92,11 +92,11 @@ static gpu_dvfs_info gpu_dvfs_table_default[] = {
 };
 
 static int mif_min_table[] = {
-	 100000,  133000,  167000,
-	 276000,  348000,  416000,
-	 543000,  632000,  828000,
-	1026000, 1264000, 1456000,
-	1552000,
+	 208000,  286000,
+	 421000,  546000,  676000,
+	 845000,  1014000, 1144000,
+	1352000,  1539000, 1716000,
+	1794000,
 };
 
 static gpu_attribute gpu_config_attributes[GPU_CONFIG_LIST_END] = {
@@ -157,7 +157,7 @@ static gpu_attribute gpu_config_attributes[GPU_CONFIG_LIST_END] = {
 	{GPU_RUNTIME_PM_DELAY_TIME, 50},
 	{GPU_DVFS_POLLING_TIME, 30},
 	{GPU_PMQOS_INT_DISABLE, 1},
-	{GPU_PMQOS_MIF_MAX_CLOCK, 1539000},
+	{GPU_PMQOS_MIF_MAX_CLOCK, 1794000},
 	{GPU_PMQOS_MIF_MAX_CLOCK_BASE, 650},
 	{GPU_CL_DVFS_START_BASE, 419},
 	{GPU_DEBUG_LEVEL, DVFS_WARNING},

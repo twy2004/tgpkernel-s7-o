@@ -264,7 +264,7 @@ void decon_reg_set_frame_fifo_size(u32 id, enum decon_dsi_mode dsi_mode, u32 wid
 
 void decon_reg_get_frame_fifo_size(u32 id, int dsi_idx, u32 *w, u32 *h)
 {
-	u32 val;
+	u32 val=0;
 
 	if (id == 0) {
 		if (dsi_idx == 0)
@@ -380,7 +380,7 @@ void decon_reg_set_dispif_porch(u32 id, int dsi_idx, struct decon_lcd *lcd_info)
 
 void decon_reg_set_dispif_size(u32 id, int dsi_idx, u32 width, u32 height)
 {
-	u32 val;
+	u32 val=0;
 
 	val = DISPIF_HEIGHT_F(height) | DISPIF_WIDTH_F(width);
 	if (id == 0) {
@@ -425,7 +425,7 @@ void decon_reg_get_dispif_size(u32 id, int dsi_idx, u32 *p_width, u32 *p_height)
 
 void decon_reg_set_comp_size(u32 id, enum decon_mic_comp_ratio cr, enum decon_dsi_mode dsi_mode, struct decon_lcd *lcd_info)
 {
-	u32 ratio_type; /* 0 : 12N, 1: 12N4, 2 : 12N8, 3 : ratio2 */
+	u32 ratio_type=0; /* 0 : 12N, 1: 12N4, 2 : 12N8, 3 : ratio2 */
 	u32 mic_width_in_bytes, mic_dummy_in_bytes = 0;
 	u32 width;
 	u32 temp_size, odd_n = 0;
@@ -740,7 +740,7 @@ void decon_reg_configure_trigger(u32 id, enum decon_trig_mode mode)
 
 u32 decon_reg_get_linecnt(u32 id, int dispif_idx)
 {
-	u32 val;
+	u32 val=0;
 
 	if (dispif_idx == 0)
 		val = decon_read_mask(0, DISPIF_LINE_COUNT, DISPIF_LINE_COUNT_DISPIF0_MASK) >> DISPIF_LINE_COUNT_DISPIF0_SHIFT;
@@ -1096,7 +1096,7 @@ u32 dsc_reg_get_num_extra_mux_bits(u32 SliceHeight, u32 chunk_size)
 u32 dsc_reg_get_slice_height(u32 picture_height, u32 slice_width)
 {
 
-	u32 slice_height;
+	u32 slice_height=0;
 	u32 uMinSliceSize;
 	u32 uQuotient = 1;
 	u32 i, uCnt = 0;

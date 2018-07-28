@@ -142,7 +142,7 @@ static int srpmb_ioctl_secu_prot_command(struct scsi_device *sdev, char *cmd,
 					Rpmb_Req *req,
 					int timeout, int retries)
 {
-	int result, dma_direction;
+	int result, dma_direction=0;
 	struct scsi_sense_hdr sshdr;
 	unsigned char *buf;
 	unsigned int bufflen;

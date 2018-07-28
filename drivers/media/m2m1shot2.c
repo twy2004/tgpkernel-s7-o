@@ -1556,7 +1556,7 @@ static long m2m1shot2_compat_ioctl32(struct file *filp,
 	struct device *dev = ctx->m21dev->dev;
 	struct compat_m2m1shot2 __user *cdata = compat_ptr(arg);
 	struct m2m1shot2 __user *data;
-	struct m2m1shot2_image __user *src;
+	struct m2m1shot2_image __user *src=NULL;
 	int ret;
 	compat_ulong_t l;
 	compat_uptr_t sources;

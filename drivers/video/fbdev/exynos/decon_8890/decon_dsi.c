@@ -534,7 +534,7 @@ irqreturn_t decon_fb_isr_for_eint(int irq, void *dev_id)
 int decon_config_eint_for_te(struct platform_device *pdev, struct decon_device *decon)
 {
 	struct device *dev = decon->dev;
-	int gpio, gpio1;
+	int gpio=0, gpio1;
 	int ret = 0;
 
 	/* Get IRQ resource and register IRQ handler. */

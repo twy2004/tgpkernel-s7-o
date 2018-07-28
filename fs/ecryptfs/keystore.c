@@ -1739,7 +1739,7 @@ decrypt_passphrase_encrypted_session_key(struct ecryptfs_auth_tok *auth_tok,
 	};
 	int rc = 0;
 #ifdef CONFIG_CRYPTO_FIPS
-	char iv[ECRYPTFS_DEFAULT_IV_BYTES];
+	char iv[ECRYPTFS_DEFAULT_IV_BYTES]="\0";
 #endif
 #ifdef CONFIG_ECRYPTFS_FEK_INTEGRITY
 	unsigned char hmac_hash[FEK_HASH_SIZE];
@@ -2412,7 +2412,7 @@ write_tag_3_packet(char *dest, size_t *remaining_bytes,
 	};
 	int rc = 0;
 #ifdef CONFIG_CRYPTO_FIPS
-	char iv[ECRYPTFS_DEFAULT_IV_BYTES];
+	char iv[ECRYPTFS_DEFAULT_IV_BYTES]="\0";
 #endif
 
 	(*packet_size) = 0;

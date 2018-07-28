@@ -1045,7 +1045,7 @@ void smc_mode_register_write_per_ch(int ch, int mr, int rank, int op)
 	unsigned long moderegwrdata;
 	unsigned long mprmrctl;
 
-	unsigned long base;
+	unsigned long base=0;
 
 	switch (ch) {
 	case 0:
@@ -1623,7 +1623,7 @@ static void pwrcal_dram_print_info(void)
 	int byte;
 	int idx;
 
-	unsigned int tdqs2dq;
+	unsigned int tdqs2dq=0;
 	unsigned int tdqsck[2];
 
 	for (ch = 0; ch < 4; ch++) {

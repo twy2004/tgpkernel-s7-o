@@ -146,7 +146,7 @@ static int exynos_bind(struct thermal_zone_device *thermal,
 	struct freq_clip_table *tab_ptr, *clip_data;
 	struct exynos_thermal_zone *th_zone = thermal->devdata;
 	struct thermal_sensor_conf *data = th_zone->sensor_conf;
-	enum thermal_trip_type type;
+	enum thermal_trip_type type=0;
 	struct cpufreq_policy policy;
 	int max_freq;
 
@@ -241,7 +241,7 @@ static int exynos_unbind(struct thermal_zone_device *thermal,
 	int ret = 0, i, tab_size;
 	struct exynos_thermal_zone *th_zone = thermal->devdata;
 	struct thermal_sensor_conf *data = th_zone->sensor_conf;
-	enum thermal_trip_type type;
+	enum thermal_trip_type type=0;
 
 	if (th_zone->bind == false)
 		return 0;

@@ -36,9 +36,6 @@ struct pm_qos_request proactive_int_min_qos;
 
 int gpu_pm_qos_command(struct exynos_context *platform, gpu_pmqos_state state)
 {
-#ifdef CONFIG_MALI_DVFS
-	int idx;
-#endif
 
 	DVFS_ASSERT(platform);
 

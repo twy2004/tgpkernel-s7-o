@@ -460,11 +460,11 @@ static int s2m_set_ldo_dvs_control(struct regulator_dev *rdev)
 	int ret = -1;
 	struct s2mps16_info *s2mps16 = rdev_get_drvdata(rdev);
 	int reg_id = rdev_get_id(rdev);
-	unsigned int sram_vthr, sram_delta;
+	unsigned int sram_vthr=0, sram_delta=0;
 	int asv_info;
 	int vthr_mask, delta_mask;
-	int vthr_val, delta_val = 0;
-	int dvs_reg;
+	int vthr_val=0, delta_val = 0;
+	int dvs_reg=0;
 	unsigned int ctrl_value;
 
 	asv_info = cal_asv_pmic_info();
@@ -590,7 +590,7 @@ out:
 static int s2m_set_voltage_sel_regmap_buck(struct regulator_dev *rdev,
 								unsigned sel)
 {
-	int ret;
+	int ret=0;
 	struct s2mps16_info *s2mps16 = rdev_get_drvdata(rdev);
 	int reg_id = rdev_get_id(rdev);
 	unsigned int voltage;
