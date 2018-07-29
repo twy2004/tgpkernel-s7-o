@@ -186,7 +186,7 @@ static const inline char *q_dir(enum direction dir)
 		return q_direction_string[dir];
 }
 
-static const char * const ipc_direction_string[] = {
+static const char * ipc_direction_string[] = {
 	[TX] = "AP->CP",
 	[RX] = "AP<-CP"
 };
@@ -199,7 +199,7 @@ static const inline char *ipc_dir(enum direction dir)
 		return ipc_direction_string[dir];
 }
 
-static const char * const arrow_direction[] = {
+static const char * arrow_direction[] = {
 	[TX] = "->",
 	[RX] = "<-"
 };
@@ -212,7 +212,7 @@ static const inline char *arrow(enum direction dir)
 		return arrow_direction[dir];
 }
 
-static const char * const modem_state_string[] = {
+static const char * modem_state_string[] = {
 	[STATE_OFFLINE]		= "OFFLINE",
 	[STATE_CRASH_RESET]	= "CRASH_RESET",
 	[STATE_CRASH_EXIT]	= "CRASH_EXIT",

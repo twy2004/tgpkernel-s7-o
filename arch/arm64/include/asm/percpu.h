@@ -36,8 +36,6 @@ static inline unsigned long __my_cpu_offset(void)
 }
 #define __my_cpu_offset __my_cpu_offset()
 
-#include <asm-generic/percpu.h>
-
 #define PERCPU_OP(op, asm_op)						\
 static inline unsigned long __percpu_##op(void *ptr,			\
 			unsigned long val, int size)			\
@@ -274,5 +272,7 @@ do {									\
 #define this_cpu_xchg_2(pcp, val) _percpu_xchg(pcp, val)
 #define this_cpu_xchg_4(pcp, val) _percpu_xchg(pcp, val)
 #define this_cpu_xchg_8(pcp, val) _percpu_xchg(pcp, val)
+
+#include <asm-generic/percpu.h>
 
 #endif /* __ASM_PERCPU_H */

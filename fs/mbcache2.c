@@ -45,7 +45,7 @@ static struct kmem_cache *mb2_entry_cache;
 static unsigned long mb2_cache_shrink(struct mb2_cache *cache,
 				      unsigned int nr_to_scan);
 
-static inline struct hlist_bl_head *mb2_cache_entry_head(struct mb2_cache_entry *cache,
+static inline struct hlist_bl_head *mb2_cache_entry_head(struct mb2_cache *cache,
 								u32 key)
 {
 	return &cache->c_hash[hash_32(key, cache->c_bucket_bits)];
