@@ -19,7 +19,7 @@ OUTPUT=$RDIR/.output
 OUTDIR=$WORKDIR/arch/$ARCH/boot
 KERNELCONFIG=build_defconfig
 KEEP=no
-SILENT=no
+SILENT=yes
 
 ########################################################################################################################################################
 # Functions
