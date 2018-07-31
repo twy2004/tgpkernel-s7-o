@@ -18,7 +18,7 @@ ZIPDIR=$RDIR/.work_zip
 OUTPUT=$RDIR/.output
 OUTDIR=$WORKDIR/arch/$ARCH/boot
 KERNELCONFIG=build_defconfig
-KEEP=no
+KEEP=yes
 SILENT=yes
 
 ########################################################################################################################################################
@@ -271,7 +271,7 @@ ZIP_NAME=$KERNELNAME.G93xx.v$VERSION_NUMBER.$ZIP_DATE.zip
 ZIP_FILE_TARGET=$ZIPDIR/$ZIP_NAME
 FUNC_BUILD_ZIP
 END_TIME=`date +%s`
-FUNC_CLEAN
+#FUNC_CLEAN
 [ -d "$ZIPDIR" ] && rm -rf $ZIPDIR
 let "ELAPSED_TIME=$END_TIME-$START_TIME"
 echo ""

@@ -2273,13 +2273,6 @@ static __always_inline u64 decay_load(u64 val, u64 n)
 	return val >> 32;
 }
 
-/*
- * For updates fully spanning n periods, the contribution to runnable
- * average will be: \Sum 1024*y^n
- *
- * We can compute this reasonably efficiently by combining:
- *   y^PERIOD = 1/2 with precomputed \Sum 1024*y^n {for  n <PERIOD}
- */
 static u32 __compute_runnable_contrib(u64 n)
 {
 	u32 contrib = 0;
