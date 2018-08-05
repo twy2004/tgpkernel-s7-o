@@ -2728,8 +2728,13 @@ redo:
 	 * on a different processor between the determination of the pointer
 	 * and the retrieval of the tid.
 	 */
-	preempt_disable();
-	c = this_cpu_ptr(s->cpu_slab);
+
+	do {
+		tid = this_cpu_read(s->cpu_slab->tid);
+		c = raw_cpu_ptr(s->cpu_slab);
+	} while (IS_ENABLED(CONFIG_PREEMPT) && unlikely(tid != c->tid));
+
+	barrier();
 
 	/*
 	 * The transaction ids are globally unique per cpu and per operation on
@@ -2737,8 +2742,6 @@ redo:
 	 * occurs on the right processor and that there was no operation on the
 	 * linked list in between.
 	 */
-	tid = c->tid;
-	preempt_enable();
 
 	object = c->freelist;
 #ifdef CONFIG_SLUB_DEBUG_LIGHT
@@ -2998,11 +3001,12 @@ redo:
 	 * data is retrieved via this pointer. If we are on the same cpu
 	 * during the cmpxchg then the free will succedd.
 	 */
-	preempt_disable();
-	c = this_cpu_ptr(s->cpu_slab);
+	do {
+		tid = this_cpu_read(s->cpu_slab->tid);
+		c = raw_cpu_ptr(s->cpu_slab);
+	} while (IS_ENABLED(CONFIG_PREEMPT) && unlikely(tid != c->tid));
 
-	tid = c->tid;
-	preempt_enable();
+	barrier();	
 
 	if (likely(page == c->page)) {
 		set_freepointer(s, object, c->freelist);
