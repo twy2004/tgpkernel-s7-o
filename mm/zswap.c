@@ -230,8 +230,10 @@ struct zswap_entry {
 	pgoff_t offset;
 	int refcount;
 	unsigned int length;
-	unsigned long handle;
-	unsigned long value;
+	union{
+		unsigned long handle;
+		unsigned long value;
+	}
 };
 
 #ifdef CONFIG_ZSWAP_ENABLE_WRITEBACK
@@ -949,7 +951,6 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 		entry->offset = offset;
 		entry->length = 0;
 		entry->value = value;
-		entry->handle = 0;
 		kunmap_atomic(src);
 		goto insert_entry;
 	}
