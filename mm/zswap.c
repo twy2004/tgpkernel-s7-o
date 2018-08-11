@@ -233,7 +233,7 @@ struct zswap_entry {
 	union{
 		unsigned long handle;
 		unsigned long value;
-	}
+	};
 };
 
 #ifdef CONFIG_ZSWAP_ENABLE_WRITEBACK
