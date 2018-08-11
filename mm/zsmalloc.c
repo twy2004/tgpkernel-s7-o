@@ -723,7 +723,7 @@ static inline void zs_pool_stat_destroy(struct zs_pool *pool)
  * status of the given page.
  */
 static enum fullness_group get_fullness_group(struct size_class *class,
-												struct page *first_page)
+												struct page *page)
 {
 	int inuse, objs_per_zspage;
 	enum fullness_group fg;
