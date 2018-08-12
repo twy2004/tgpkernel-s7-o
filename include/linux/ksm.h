@@ -29,7 +29,7 @@ int ksm_madvise(struct vm_area_struct *vma, unsigned long start,
 static inline int PageKsm(struct page *page)
 {
 	return ((unsigned long)page->mapping & PAGE_MAPPING_FLAGS) ==
-				(PAGE_MAPPING_ANON | PAGE_MAPPING_KSM);
+				PAGE_MAPPING_KSM;
 }
 
 static inline struct stable_node *page_stable_node(struct page *page)
@@ -40,10 +40,8 @@ static inline struct stable_node *page_stable_node(struct page *page)
 static inline void set_page_stable_node(struct page *page,
 					struct stable_node *stable_node)
 {
-	page->mapping = (void *)stable_node +
-				(PAGE_MAPPING_ANON | PAGE_MAPPING_KSM);
+	page->mapping = (void *)((unsigned long)stable_node | PAGE_MAPPING_KSM);
 }
-
 /*
  * When do_swap_page() first faults in from swap what used to be a KSM page,
  * no problem, it will be assigned to this vma's anon_vma; but thereafter,
