@@ -970,7 +970,7 @@ static int zswap_frontswap_store(unsigned type, pgoff_t offset,
 #ifdef CONFIG_ZSWAP_ENABLE_WRITEBACK
 	len += sizeof(struct zswap_header);
 #endif
-	ret = zpool_malloc(zswap_pool, len, __GFP_NORETRY | __GFP_NOWARN,
+	ret = zpool_malloc(zswap_pool, len, __GFP_NORETRY | __GFP_NOWARN | __GFP_MOVABLE,
 		&handle);
 	if (ret == -ENOSPC) {
 		zswap_reject_compress_poor++;
@@ -1279,7 +1279,7 @@ static void __exit zswap_debugfs_exit(void) { }
 **********************************/
 static int __init init_zswap(void)
 {
-	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_HIGHMEM;
+	gfp_t gfp = __GFP_NORETRY | __GFP_NOWARN | __GFP_HIGHMEM | __GFP_MOVABLE;
 
 	if (!zswap_enabled)
 		return 0;
