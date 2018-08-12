@@ -940,6 +940,19 @@ skip_unmap:
 out_unlock:
 	unlock_page(page);
 out:
+	/*
+	 * If migration is successful, decrease refcount of the newpage
+	 * which will not free the page because new page owner increased
+	 * refcounter. As well, if it is LRU page, add the page to LRU
+	 * list in here.
+	 */
+	if (rc == MIGRATEPAGE_SUCCESS) {
+		if (unlikely(__is_movable_balloon_page(newpage)))
+			put_page(newpage);
+		else
+			putback_lru_page(newpage);
+	}
+	
 	return rc;
 }
 
@@ -960,6 +973,12 @@ static int unmap_and_move(new_page_t get_new_page, free_page_t put_new_page,
 
 	if (page_count(page) == 1) {
 		/* page was freed from under us. So we are done. */
+		ClearPageActive(page);
+		ClearPageUnevictable(page);
+		if (put_new_page)
+			put_new_page(newpage, private);
+		else
+			put_page(newpage);
 		goto out;
 	}
 
@@ -980,22 +999,22 @@ out:
 		list_del(&page->lru);
 		dec_zone_page_state(page, NR_ISOLATED_ANON +
 				page_is_file_cache(page));
-		putback_lru_page(page);
 	}
-
+	
 	/*
-	 * If migration was not successful and there's a freeing callback, use
-	 * it.  Otherwise, putback_lru_page() will drop the reference grabbed
-	 * during isolation.
+	 * If migration is successful, releases reference grabbed during
+	 * isolation. Otherwise, restore the page to right list unless
+	 * we want to retry.
 	 */
-	if (rc != MIGRATEPAGE_SUCCESS && put_new_page) {
-		ClearPageSwapBacked(newpage);
-		put_new_page(newpage, private);
-	} else if (unlikely(__is_movable_balloon_page(newpage))) {
-		/* drop our reference, page already in the balloon */
-		put_page(newpage);
-	} else
-		putback_lru_page(newpage);
+	if (rc != MIGRATEPAGE_SUCCESS) {
+		if (rc != -EAGAIN)
+			putback_lru_page(page);
+		if (put_new_page){
+			ClearPageSwapBacked(newpage);
+			put_new_page(newpage, private);
+		} else
+			put_page(newpage);
+	}
 
 	if (result) {
 		if (rc)

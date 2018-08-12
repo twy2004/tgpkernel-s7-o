@@ -1817,7 +1817,7 @@ static int reclaim_zspage(struct zs_pool *pool, struct page *first_page)
 				return ret;
 			}
 			obj_seq_operation(pool, class, obj, OBJ_SEQ_CLEAR);
-			obj_free(pool, class, obj);
+			obj_free(class, obj);
 			free_handle(pool, handle);
 #ifdef CONFIG_ZSMALLOC_OBJ_SEQ
 			obj_success++;
