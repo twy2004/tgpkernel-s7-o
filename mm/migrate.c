@@ -902,7 +902,20 @@ static int move_to_new_page(struct page *newpage, struct page *page,
 	 */
 	if (rc == MIGRATEPAGE_SUCCESS) {
 		mem_cgroup_migrate(page, newpage, false);
-		if (!PageAnon(page))
+		if (__PageMovable(page)) {
+			VM_BUG_ON_PAGE(!PageIsolated(page), page);
+ 			/*
+			 * We clear PG_movable under page_lock so any compactor
+			 * cannot try to migrate this page.
+			 */
+			__ClearPageIsolated(page);
+		}
+ 		/*
+		 * Anonymous and movable page->mapping will be cleard by
+		 * free_pages_prepare so don't reset it here for keeping
+		 * the type to work PageAnon, for example.
+		 */
+		if (!PageMappingFlags(page))
 			page->mapping = NULL;
 	} else {
 		newpage->mapping = NULL;
@@ -919,6 +932,7 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
 	int rc = -EAGAIN;
 	int remap_swapcache = 1;
 	struct anon_vma *anon_vma = NULL;
+	bool is_lru = !__PageMovable(page);
 
 	if (!trylock_page(page)) {
 		if (!force || mode == MIGRATE_ASYNC)
@@ -1007,6 +1021,14 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
 		goto out_unlock;
 	}
 
+	if (unlikely(!is_lru)) {
+		rc = move_to_new_page(newpage, page, mode);
+		unlock_page(newpage);
+		if (anon_vma)
+			put_anon_vma(anon_vma);
+		goto out_unlock;
+	}
+	
 	/*
 	 * Corner case handling:
 	 * 1. When a new swap-cache page is read into, it is added to the LRU
@@ -1053,7 +1075,8 @@ out:
 	 * list in here.
 	 */
 	if (rc == MIGRATEPAGE_SUCCESS) {
-		if (unlikely(__is_movable_balloon_page(newpage)))
+		if (unlikely(__is_movable_balloon_page(newpage) ||
+						__PageMovable(newpage)))
 			put_page(newpage);
 		else
 			putback_lru_page(newpage);
@@ -1081,6 +1104,12 @@ static int unmap_and_move(new_page_t get_new_page, free_page_t put_new_page,
 		/* page was freed from under us. So we are done. */
 		ClearPageActive(page);
 		ClearPageUnevictable(page);
+		if (unlikely(__PageMovable(page))) {
+			lock_page(page);
+			if (!PageMovable(page))
+				__ClearPageIsolated(page);
+			unlock_page(page);
+		}
 		if (put_new_page)
 			put_new_page(newpage, private);
 		else
@@ -1115,8 +1144,20 @@ out:
 	if (rc == MIGRATEPAGE_SUCCESS) {
 		put_page(page);
 	} else {
-		if (rc != -EAGAIN)
-			putback_lru_page(page);
+		if (rc != -EAGAIN) {
+			if (likely(!__PageMovable(page))) {
+				putback_lru_page(page);
+				goto put_new;
+			}
+ 			lock_page(page);
+			if (PageMovable(page))
+				putback_movable_page(page);
+			else
+				__ClearPageIsolated(page);
+			unlock_page(page);
+			put_page(page);
+		}
+put_new:
 		if (put_new_page){
 			ClearPageSwapBacked(newpage);
 			put_new_page(newpage, private);

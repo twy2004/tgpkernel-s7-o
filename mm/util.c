@@ -305,9 +305,12 @@ struct address_space *page_mapping(struct page *page)
 
 		entry.val = page_private(page);
 		mapping = swap_address_space(entry);
-	} else if ((unsigned long)mapping & PAGE_MAPPING_ANON)
+		return mapping;
+	} else if ((unsigned long)mapping & PAGE_MAPPING_ANON){
 		mapping = NULL;
-	return mapping;
+		return mapping;
+	}
+	return (void *)((unsigned long)mapping & ~PAGE_MAPPING_FLAGS);
 }
 EXPORT_SYMBOL(page_mapping);
 
