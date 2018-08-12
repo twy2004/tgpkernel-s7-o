@@ -840,7 +840,7 @@ static int fallback_migrate_page(struct address_space *mapping,
  *  MIGRATEPAGE_SUCCESS - success
  */
 static int move_to_new_page(struct page *newpage, struct page *page,
-				int remap_swapcache, enum migrate_mode mode)
+				enum migrate_mode mode)
 {
 	struct address_space *mapping;
 	int rc = -EAGAIN;
@@ -896,13 +896,16 @@ static int move_to_new_page(struct page *newpage, struct page *page,
 			!PageIsolated(page));
 	}
 
-	if (rc != MIGRATEPAGE_SUCCESS) {
-		newpage->mapping = NULL;
-	} else {
+	/*
+	 * When successful, old pagecache page->mapping must be cleared before
+	 * page is freed; but stats require that PageAnon be left as PageAnon.
+	 */
+	if (rc == MIGRATEPAGE_SUCCESS) {
 		mem_cgroup_migrate(page, newpage, false);
-		if (remap_swapcache)
-			remove_migration_ptes(page, newpage);
-		page->mapping = NULL;
+		if (!PageAnon(page))
+			page->mapping = NULL;
+	} else {
+		newpage->mapping = NULL;
 	}
 
 	unlock_page(newpage);
@@ -1030,10 +1033,11 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
 
 skip_unmap:
 	if (!page_mapped(page))
-		rc = move_to_new_page(newpage, page, remap_swapcache, mode);
+		rc = move_to_new_page(newpage, page, mode);
 
-	if (rc && remap_swapcache)
-		remove_migration_ptes(page, page);
+	if (page_was_mapped)
+		remove_migration_ptes(page,
+				rc == MIGRATEPAGE_SUCCESS ? newpage : page);
 
 	/* Drop an anon_vma reference if we took one */
 	if (anon_vma)
@@ -1187,10 +1191,10 @@ static int unmap_and_move_huge_page(new_page_t get_new_page,
 	try_to_unmap(hpage, TTU_MIGRATION|TTU_IGNORE_MLOCK|TTU_IGNORE_ACCESS);
 
 	if (!page_mapped(hpage))
-		rc = move_to_new_page(new_hpage, hpage, 1, mode);
+		rc = move_to_new_page(new_hpage, hpage, mode);
 
-	if (rc != MIGRATEPAGE_SUCCESS)
-		remove_migration_ptes(hpage, hpage);
+	remove_migration_ptes(hpage,
+			rc == MIGRATEPAGE_SUCCESS ? new_hpage : hpage);
 
 	if (anon_vma)
 		put_anon_vma(anon_vma);
