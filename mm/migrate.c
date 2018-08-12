@@ -159,14 +159,12 @@ void putback_movable_pages(struct list_head *l)
 		list_del(&page->lru);
 		dec_zone_page_state(page, NR_ISOLATED_ANON +
 				page_is_file_cache(page));
-		if (unlikely(isolated_balloon_page(page))) {
-			balloon_page_putback(page);
 		/*
 		 * We isolated non-lru movable page so here we can use
 		 * __PageMovable because LRU page's mapping cannot have
 		 * PAGE_MAPPING_MOVABLE.
 		 */
-		} else if (unlikely(__PageMovable(page))) {
+		if (unlikely(__PageMovable(page))) {
 			VM_BUG_ON_PAGE(!PageIsolated(page), page);
 			lock_page(page);
 			if (PageMovable(page))
@@ -846,13 +844,8 @@ static int move_to_new_page(struct page *newpage, struct page *page,
 	int rc = -EAGAIN;
 	bool is_lru = !__PageMovable(page);
 
-	/*
-	 * Block others from accessing the page when we get around to
-	 * establishing additional references. We are the only one
-	 * holding a reference to the new page at this point.
-	 */
-	if (!trylock_page(newpage))
-		BUG();
+	VM_BUG_ON_PAGE(!PageLocked(page), page);
+	VM_BUG_ON_PAGE(!PageLocked(newpage), newpage);
 
 	/* Prepare mapping for the new page.*/
 	newpage->index = page->index;
@@ -920,8 +913,7 @@ static int move_to_new_page(struct page *newpage, struct page *page,
 	} else {
 		newpage->mapping = NULL;
 	}
-
-	unlock_page(newpage);
+	
 out:
 	return rc;
 }
@@ -930,7 +922,7 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
 				int force, enum migrate_mode mode)
 {
 	int rc = -EAGAIN;
-	int remap_swapcache = 1;
+	int page_was_mapped  = 0;
 	struct anon_vma *anon_vma = NULL;
 	bool is_lru = !__PageMovable(page);
 
@@ -1003,30 +995,25 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
 			 * migrated but are not remapped when migration
 			 * completes
 			 */
-			remap_swapcache = 0;
 		} else {
 			goto out_unlock;
 		}
 	}
 
-	if (unlikely(isolated_balloon_page(page))) {
-		/*
-		 * A ballooned page does not need any special attention from
-		 * physical to virtual reverse mapping procedures.
-		 * Skip any attempt to unmap PTEs or to remap swap cache,
-		 * in order to avoid burning cycles at rmap level, and perform
-		 * the page migration right away (proteced by page lock).
-		 */
-		rc = balloon_page_migrate(newpage, page, mode);
+	/*
+	 * Block others from accessing the new page when we get around to
+	 * establishing additional references. We are usually the only one
+	 * holding a reference to newpage at this point. We used to have a BUG
+	 * here if trylock_page(newpage) fails, but would like to allow for
+	 * cases where there might be a race with the previous use of newpage.
+	 * This is much like races on refcount of oldpage: just don't BUG().
+	 */
+	if (unlikely(!trylock_page(newpage)))
 		goto out_unlock;
-	}
-
+	
 	if (unlikely(!is_lru)) {
 		rc = move_to_new_page(newpage, page, mode);
-		unlock_page(newpage);
-		if (anon_vma)
-			put_anon_vma(anon_vma);
-		goto out_unlock;
+		goto out_unlock_both;
 	}
 	
 	/*
@@ -1045,27 +1032,26 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
 		VM_BUG_ON_PAGE(PageAnon(page), page);
 		if (page_has_private(page)) {
 			try_to_free_buffers(page);
-			goto out_unlock;
+			goto out_unlock_both;
 		}
-		goto skip_unmap;
+	} else if (page_mapped(page)) {
+		/* Establish migration ptes */
+		try_to_unmap(page, TTU_MIGRATION|TTU_IGNORE_MLOCK|TTU_IGNORE_ACCESS);
+		page_was_mapped = 1;
 	}
-
-	/* Establish migration ptes or remove ptes */
-	try_to_unmap(page, TTU_MIGRATION|TTU_IGNORE_MLOCK|TTU_IGNORE_ACCESS);
-
-skip_unmap:
+	
 	if (!page_mapped(page))
 		rc = move_to_new_page(newpage, page, mode);
 
 	if (page_was_mapped)
 		remove_migration_ptes(page,
 				rc == MIGRATEPAGE_SUCCESS ? newpage : page);
-
+out_unlock_both:
+	unlock_page(newpage);
+out_unlock:
 	/* Drop an anon_vma reference if we took one */
 	if (anon_vma)
 		put_anon_vma(anon_vma);
-
-out_unlock:
 	unlock_page(page);
 out:
 	/*
@@ -1075,8 +1061,7 @@ out:
 	 * list in here.
 	 */
 	if (rc == MIGRATEPAGE_SUCCESS) {
-		if (unlikely(__is_movable_balloon_page(newpage) ||
-						__PageMovable(newpage)))
+		if (unlikely(__PageMovable(newpage)))
 			put_page(newpage);
 		else
 			putback_lru_page(newpage);
@@ -1199,6 +1184,7 @@ static int unmap_and_move_huge_page(new_page_t get_new_page,
 {
 	int rc = 0;
 	int *result = NULL;
+	int page_was_mapped = 0;
 	struct page *new_hpage;
 	struct anon_vma *anon_vma = NULL;
 
@@ -1228,15 +1214,26 @@ static int unmap_and_move_huge_page(new_page_t get_new_page,
 
 	if (PageAnon(hpage))
 		anon_vma = page_get_anon_vma(hpage);
-
-	try_to_unmap(hpage, TTU_MIGRATION|TTU_IGNORE_MLOCK|TTU_IGNORE_ACCESS);
+	
+	if (unlikely(!trylock_page(new_hpage)))
+		goto put_anon;
+	
+	if (page_mapped(hpage)) {
+		try_to_unmap(hpage, 
+				TTU_MIGRATION|TTU_IGNORE_MLOCK|TTU_IGNORE_ACCESS);
+		page_was_mapped = 1;
+	}
 
 	if (!page_mapped(hpage))
 		rc = move_to_new_page(new_hpage, hpage, mode);
 
-	remove_migration_ptes(hpage,
-			rc == MIGRATEPAGE_SUCCESS ? new_hpage : hpage);
+	if (page_was_mapped)
+		remove_migration_ptes(hpage,
+				rc == MIGRATEPAGE_SUCCESS ? new_hpage : hpage);
 
+	unlock_page(new_hpage);
+	
+put_anon:
 	if (anon_vma)
 		put_anon_vma(anon_vma);
 

@@ -998,8 +998,8 @@ void page_address_init(void);
  * refers to user virtual address space into which the page is mapped.
  */
 #define PAGE_MAPPING_ANON	0x1
-#define PAGE_MAPPING_KSM	2	#define PAGE_MAPPING_MOVABLE	0x2
-#define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_KSM)	#define PAGE_MAPPING_KSM	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
+#define PAGE_MAPPING_MOVABLE	0x2
+#define PAGE_MAPPING_KSM	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 #define PAGE_MAPPING_FLAGS	(PAGE_MAPPING_ANON | PAGE_MAPPING_MOVABLE)
 static __always_inline int PageMappingFlags(struct page *page)
 {
