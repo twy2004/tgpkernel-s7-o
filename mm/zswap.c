@@ -105,17 +105,9 @@ static char *zswap_compressor = ZSWAP_COMPRESSOR;
 module_param_named(compressor, zswap_compressor, charp, 0444);
 
 /* The maximum rate (1/1000) of memory that the compressed pool can occupy */
-static unsigned int zswap_max_pool_percent = 500;
+static unsigned int zswap_max_pool_percent = 50;
 module_param_named(max_pool_percent,
 			zswap_max_pool_percent, uint, 0644);
-
-static unsigned int zswap_high_pool_percent = 30;
-module_param_named(high_pool_percent,
-			zswap_high_pool_percent, uint, 0644);
-
-static unsigned int zswap_low_pool_percent = 25;
-module_param_named(low_pool_percent,
-			zswap_low_pool_percent, uint, 0644);
 
 #ifdef CONFIG_ZSWAP_ENABLE_WRITEBACK
 /* zswap writeback related parameters */
@@ -128,13 +120,6 @@ module_param_named(writeback_interval, zswap_writeback_interval, uint, 0644);
 #define ZSWAP_ZPOOL_DEFAULT "zsmalloc"
 static char *zswap_zpool_type = ZSWAP_ZPOOL_DEFAULT;
 module_param_named(zpool, zswap_zpool_type, charp, 0444);
-
-/* zswap compaction related parameters */
-static unsigned int zswap_compaction_interval = 10;
-module_param_named(compaction_interval, zswap_compaction_interval, uint, 0644);
-
-static unsigned int zswap_compaction_pages = 2048;
-module_param_named(compaction_pages, zswap_compaction_pages, uint, 0644);
 
 /* zpool is shared by all of zswap backend  */
 static struct zpool *zswap_pool;
@@ -480,20 +465,9 @@ static bool zswap_is_full(enum zswap_pool_status zps)
 {
 	unsigned int percent;
 
-	switch (zps) {
-	case ZSWAP_POOL_LOW:
-		percent = zswap_low_pool_percent;
-		break;
-	case ZSWAP_POOL_HIGH:
-		percent = zswap_high_pool_percent;
-		break;
-	case ZSWAP_POOL_MAX:
-	default:
-		percent = zswap_max_pool_percent;
-		break;
-	}
-
-	return ((totalram_pages * percent) / 1000) <
+	percent = zswap_max_pool_percent;
+	
+	return ((totalram_pages * percent) / 100) <
 		DIV_ROUND_UP(zswap_pool_total_size, PAGE_SIZE);
 }
 
@@ -1109,39 +1083,11 @@ freeentry:
 	return 0;
 }
 
-int sysctl_zswap_compact;
-
-int sysctl_zswap_compaction_handler(struct ctl_table *table, int write,
-			void __user *buffer, size_t *length, loff_t *ppos)
-{
-	if (write) {
-		sysctl_zswap_compact++;
-		zpool_compact(zswap_pool);
-		pr_info("zswap_compact: (%d times so far)\n",
-			sysctl_zswap_compact);
-	} else
-		proc_dointvec(table, write, buffer, length, ppos);
-
-	return 0;
-}
-
-static void zswap_compact_zpool(struct work_struct *work)
-{
-	sysctl_zswap_compact++;
-	zpool_compact(zswap_pool);
-	pr_info("zswap_compact: (%d times so far)\n",
-		sysctl_zswap_compact);
-}
-static DECLARE_WORK(zswap_compaction_work, zswap_compact_zpool);
-
 /* frees an entry in zswap */
 static void zswap_frontswap_invalidate_page(unsigned type, pgoff_t offset)
 {
 	struct zswap_tree *tree = zswap_trees[type];
 	struct zswap_entry *entry;
-#ifdef CONFIG_ZSWAP_COMPACTION
-	static unsigned long resume = 0;
-#endif
 
 	/* find */
 	spin_lock(&tree->lock);
@@ -1159,15 +1105,6 @@ static void zswap_frontswap_invalidate_page(unsigned type, pgoff_t offset)
 	zswap_entry_put(tree, entry);
 
 	spin_unlock(&tree->lock);
-
-#ifdef CONFIG_ZSWAP_COMPACTION
-	if (time_is_before_jiffies(resume) &&
-		!work_pending(&zswap_compaction_work) &&
-		zpool_compactable(zswap_pool, zswap_compaction_pages)) {
-		resume = jiffies + zswap_compaction_interval * HZ;
-		schedule_work(&zswap_compaction_work);
-	}
-#endif
 }
 
 /* frees all zswap entries for the given swap type */
