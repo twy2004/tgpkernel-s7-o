@@ -131,7 +131,7 @@ config EXYNOS_SNAPSHOT_SFRDUMP_ADV
 config EXYNOS_SNAPSHOT_MINIMIZED_MODE
 	bool "Support minimized feature configuration"
 	depends on EXYNOS_SNAPSHOT
-	default y
+	default n
 
 config EXYNOS_SNAPSHOT_LOGGING_SMC_CALL
 	bool "Support logging SMC call"
