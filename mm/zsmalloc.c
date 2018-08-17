@@ -251,13 +251,6 @@ struct zs_pool {
 
 	struct zs_pool_stats stats;
 
-	/* Compact classes */
-	struct shrinker shrinker;
-	/*
-	 * To signify that register_shrinker() was successful
-	 * and unregister_shrinker() will not Oops.
-	 */
-	bool shrinker_enabled;
 #ifdef CONFIG_ZSMALLOC_STAT
 	struct dentry *stat_dentry;
 #endif
@@ -437,6 +430,16 @@ static u64 zs_zpool_total_size(void *pool)
 	return zs_get_total_pages(pool) << PAGE_SHIFT;
 }
 
+static unsigned long zs_zpool_compact(void *pool)
+{
+	return zs_compact(pool);
+}
+
+static bool zs_zpool_compactable(void *pool, unsigned int pages)
+{
+	return zs_compactable(pool, pages);
+}
+
 static struct zpool_driver zs_zpool_driver = {
 	.type =		"zsmalloc",
 	.owner =	THIS_MODULE,
@@ -448,6 +451,8 @@ static struct zpool_driver zs_zpool_driver = {
 	.map =		zs_zpool_map,
 	.unmap =	zs_zpool_unmap,
 	.total_size =	zs_zpool_total_size,
+	.compact =	zs_zpool_compact,
+	.compactable =	zs_zpool_compactable,
 };
 
 MODULE_ALIAS("zpool-zsmalloc");
@@ -2295,69 +2300,31 @@ unsigned long zs_compact(struct zs_pool *pool)
 }
 EXPORT_SYMBOL_GPL(zs_compact);
 
-void zs_pool_stats(struct zs_pool *pool, struct zs_pool_stats *stats)
-{
-	memcpy(stats, &pool->stats, sizeof(struct zs_pool_stats));
-}
-EXPORT_SYMBOL_GPL(zs_pool_stats);
-
-static unsigned long zs_shrinker_scan(struct shrinker *shrinker,
-		struct shrink_control *sc)
-{
-	unsigned long pages_freed;
-	struct zs_pool *pool = container_of(shrinker, struct zs_pool,
-			shrinker);
-
-	pages_freed = pool->stats.pages_compacted;
-	/*
-	 * Compact classes and calculate compaction delta.
-	 * Can run concurrently with a manually triggered
-	 * (by user) compaction.
-	 */
-	pages_freed = zs_compact(pool) - pages_freed;
-
-	return pages_freed ? pages_freed : SHRINK_STOP;
-}
-
-static unsigned long zs_shrinker_count(struct shrinker *shrinker,
-		struct shrink_control *sc)
+bool zs_compactable(struct zs_pool *pool, unsigned int pages)
 {
 	int i;
 	struct size_class *class;
-	unsigned long pages_to_free = 0;
-	struct zs_pool *pool = container_of(shrinker, struct zs_pool,
-			shrinker);
-
-	for (i = ZS_SIZE_CLASSES - 1; i >= 0; i--) {
+	unsigned int total_reclaimable_pages = 0;
+	
+	for (i = 0; i < ZS_SIZE_CLASSES; i++) {
 		class = pool->size_class[i];
 		if (!class)
 			continue;
 		if (class->index != i)
 			continue;
-
-		pages_to_free += zs_can_compact(class);
+		
+		total_reclaimable_pages += zs_can_compact(class);
+		if (total_reclaimable_pages >= pages)
+			return true;
 	}
-
-	return pages_to_free;
+	return false;
 }
 
-static void zs_unregister_shrinker(struct zs_pool *pool)
+void zs_pool_stats(struct zs_pool *pool, struct zs_pool_stats *stats)
 {
-	if (pool->shrinker_enabled) {
-		unregister_shrinker(&pool->shrinker);
-		pool->shrinker_enabled = false;
-	}
+	memcpy(stats, &pool->stats, sizeof(struct zs_pool_stats));
 }
-
-static int zs_register_shrinker(struct zs_pool *pool)
-{
-	pool->shrinker.scan_objects = zs_shrinker_scan;
-	pool->shrinker.count_objects = zs_shrinker_count;
-	pool->shrinker.batch = 0;
-	pool->shrinker.seeks = DEFAULT_SEEKS;
-
-	return register_shrinker(&pool->shrinker);
-}
+EXPORT_SYMBOL_GPL(zs_pool_stats);
 
 /**
  * zs_create_pool - Creates an allocation pool to work from.
@@ -2444,12 +2411,6 @@ struct zs_pool *zs_create_pool(const char *name)
 	if (zs_register_migration(pool))
 		goto err;
 
-	/*
-	 * Not critical, we still can use the pool
-	 * and user can trigger compaction manually.
-	 */
-	if (zs_register_shrinker(pool) == 0)
-		pool->shrinker_enabled = true;
 	return pool;
 
 err:
@@ -2462,7 +2423,6 @@ void zs_destroy_pool(struct zs_pool *pool)
 {
 	int i;
 
-	zs_unregister_shrinker(pool);
 	zs_unregister_migration(pool);
 	zs_pool_stat_destroy(pool);
 

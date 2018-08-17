@@ -53,6 +53,7 @@ void zs_unmap_object(struct zs_pool *pool, unsigned long handle);
 
 unsigned long zs_get_total_pages(struct zs_pool *pool);
 unsigned long zs_compact(struct zs_pool *pool);
+bool zs_compactable(struct zs_pool *pool, unsigned int pages);
 
 void zs_pool_stats(struct zs_pool *pool, struct zs_pool_stats *stats);
 #endif

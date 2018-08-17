@@ -58,6 +58,10 @@ void zpool_unmap_handle(struct zpool *pool, unsigned long handle);
 
 u64 zpool_get_total_size(struct zpool *pool);
 
+unsigned long zpool_compact(struct zpool *pool);
+
+bool zpool_compactable(struct zpool *pool, unsigned int pages);
+
 /**
  * struct zpool_driver - driver implementation for zpool
  * @type:	name of the driver.
