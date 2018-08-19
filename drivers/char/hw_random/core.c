@@ -44,7 +44,6 @@
 #include <linux/random.h>
 #include <linux/err.h>
 #include <asm/uaccess.h>
-#include <linux/freezer.h>
 
 
 #define RNG_MODULE_NAME		"hw_random"
@@ -71,6 +70,8 @@ module_param(default_quality, ushort, 0644);
 MODULE_PARM_DESC(default_quality,
 		 "default entropy content of hwrng per mill");
 
+static void drop_current_rng(void);
+static int hwrng_init(struct hwrng *rng);
 static void start_khwrngd(void);
 
 static inline int rng_get_data(struct hwrng *rng, u8 *buffer, size_t size,
@@ -99,13 +100,24 @@ static inline void cleanup_rng(struct kref *kref)
 
 	if (rng->cleanup)
 		rng->cleanup(rng);
+
+	complete(&rng->cleanup_done);
 }
 
-static void set_current_rng(struct hwrng *rng)
+static int set_current_rng(struct hwrng *rng)
 {
+	int err;
+
 	BUG_ON(!mutex_is_locked(&rng_mutex));
-	kref_get(&rng->ref);
+
+	err = hwrng_init(rng);
+	if (err)
+		return err;
+
+	drop_current_rng();
 	current_rng = rng;
+
+	return 0;
 }
 
 static void drop_current_rng(void)
@@ -147,8 +159,11 @@ static void put_rng(struct hwrng *rng)
 	mutex_unlock(&rng_mutex);
 }
 
-static inline int hwrng_init(struct hwrng *rng)
+static int hwrng_init(struct hwrng *rng)
 {
+	if (kref_get_unless_zero(&rng->ref))
+		goto skip_init;
+
 	if (rng->init) {
 		int ret;
 
@@ -156,6 +171,11 @@ static inline int hwrng_init(struct hwrng *rng)
 		if (ret)
 			return ret;
 	}
+
+	kref_init(&rng->ref);
+	reinit_completion(&rng->cleanup_done);
+
+skip_init:
 	add_early_randomness(rng);
 
 	current_quality = rng->quality ? : default_quality;
@@ -300,16 +320,9 @@ static ssize_t hwrng_attr_current_store(struct device *dev,
 	err = -ENODEV;
 	list_for_each_entry(rng, &rng_list, list) {
 		if (strcmp(rng->name, buf) == 0) {
-			if (rng == current_rng) {
-				err = 0;
-				break;
-			}
-			err = hwrng_init(rng);
-			if (err)
-				break;
-			drop_current_rng();
-			set_current_rng(rng);
 			err = 0;
+			if (rng != current_rng)
+				err = set_current_rng(rng);
 			break;
 		}
 	}
@@ -340,7 +353,6 @@ static ssize_t hwrng_attr_available_show(struct device *dev,
 					 char *buf)
 {
 	int err;
-	ssize_t ret = 0;
 	struct hwrng *rng;
 
 	err = mutex_lock_interruptible(&rng_mutex);
@@ -348,16 +360,13 @@ static ssize_t hwrng_attr_available_show(struct device *dev,
 		return -ERESTARTSYS;
 	buf[0] = '\0';
 	list_for_each_entry(rng, &rng_list, list) {
-		strncat(buf, rng->name, PAGE_SIZE - ret - 1);
-		ret += strlen(rng->name);
-		strncat(buf, " ", PAGE_SIZE - ret - 1);
-		ret++;
+		strlcat(buf, rng->name, PAGE_SIZE);
+		strlcat(buf, " ", PAGE_SIZE);
 	}
-	strncat(buf, "\n", PAGE_SIZE - ret - 1);
-	ret++;
+	strlcat(buf, "\n", PAGE_SIZE);
 	mutex_unlock(&rng_mutex);
 
-	return ret;
+	return strlen(buf);
 }
 
 static DEVICE_ATTR(rng_current, S_IRUGO | S_IWUSR,
@@ -368,14 +377,14 @@ static DEVICE_ATTR(rng_available, S_IRUGO,
 		   NULL);
 
 
-static void unregister_miscdev(void)
+static void __exit unregister_miscdev(void)
 {
 	device_remove_file(rng_miscdev.this_device, &dev_attr_rng_available);
 	device_remove_file(rng_miscdev.this_device, &dev_attr_rng_current);
 	misc_deregister(&rng_miscdev);
 }
 
-static int register_miscdev(void)
+static int __init register_miscdev(void)
 {
 	int err;
 
@@ -404,8 +413,6 @@ static int hwrng_fillfn(void *unused)
 {
 	long rc;
 
-	set_freezable();
-
 	while (!kthread_should_stop()) {
 		struct hwrng *rng;
 
@@ -433,7 +440,7 @@ static int hwrng_fillfn(void *unused)
 static void start_khwrngd(void)
 {
 	hwrng_fill = kthread_run(hwrng_fillfn, NULL, "hwrng");
-	if (IS_ERR(hwrng_fill)) {
+	if (hwrng_fill == ERR_PTR(-ENOMEM)) {
 		pr_err("hwrng_fill thread creation failed");
 		hwrng_fill = NULL;
 	}
@@ -472,24 +479,16 @@ int hwrng_register(struct hwrng *rng)
 			goto out_unlock;
 	}
 
+	init_completion(&rng->cleanup_done);
+	complete(&rng->cleanup_done);
+
 	old_rng = current_rng;
-	if (!old_rng) {
-		set_current_rng(rng);
-		err = hwrng_init(rng);
-		if (err) {
-			drop_current_rng();
-			goto out_unlock;
-		}
-	}
 	err = 0;
 	if (!old_rng) {
-		err = register_miscdev();
-		if (err) {
-			drop_current_rng();
+		err = set_current_rng(rng);
+		if (err)
 			goto out_unlock;
-		}
 	}
-	INIT_LIST_HEAD(&rng->list);
 	list_add_tail(&rng->list, &rng_list);
 
 	if (old_rng && !rng->init) {
@@ -522,31 +521,39 @@ void hwrng_unregister(struct hwrng *rng)
 
 			tail = list_entry(rng_list.prev, struct hwrng, list);
 
-			if (hwrng_init(tail) == 0)
-				set_current_rng(tail);
+			set_current_rng(tail);
 		}
 	}
 
 	if (list_empty(&rng_list)) {
-		unregister_miscdev();
+		mutex_unlock(&rng_mutex);
 		if (hwrng_fill)
 			kthread_stop(hwrng_fill);
-	}
+	} else
+		mutex_unlock(&rng_mutex);
 
-	mutex_unlock(&rng_mutex);
+	wait_for_completion(&rng->cleanup_done);
 }
 EXPORT_SYMBOL_GPL(hwrng_unregister);
 
-static void __exit hwrng_exit(void)
+static int __init hwrng_modinit(void)
+{
+	return register_miscdev();
+}
+
+static void __exit hwrng_modexit(void)
 {
 	mutex_lock(&rng_mutex);
 	BUG_ON(current_rng);
 	kfree(rng_buffer);
 	kfree(rng_fillbuf);
 	mutex_unlock(&rng_mutex);
+
+	unregister_miscdev();
 }
 
-module_exit(hwrng_exit);
+module_init(hwrng_modinit);
+module_exit(hwrng_modexit);
 
 MODULE_DESCRIPTION("H/W Random Number Generator (RNG) driver");
 MODULE_LICENSE("GPL");

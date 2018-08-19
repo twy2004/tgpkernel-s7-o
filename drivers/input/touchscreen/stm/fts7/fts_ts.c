@@ -1961,7 +1961,7 @@ static int fts_parse_dt(struct i2c_client *client)
 		retval = gpio_request_one(pdata->gpio, GPIOF_DIR_IN, "stm,tsp_int");
 		if (retval) {
 			tsp_debug_err(true, dev, "Unable to request tsp_int [%d]\n", pdata->gpio);
-			return -EINVAL;
+//			return -EINVAL;
 		}
 	} else {
 		tsp_debug_err(true, dev, "Failed to get irq gpio\n");

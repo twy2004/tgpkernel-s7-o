@@ -1618,7 +1618,7 @@ static ssize_t s3c24xx_serial_show_clksrc(struct device *dev,
 			ourport->baudclk->name ?: "(null)");
 }
 
-static DEVICE_ATTR(clock_source, S_IRUGO, s3c24xx_serial_show_clksrc, NULL);
+static DEVICE_ATTR(clock_source, 0444, s3c24xx_serial_show_clksrc, NULL);
 #endif
 
 /* Device driver serial port probe */

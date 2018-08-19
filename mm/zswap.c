@@ -1155,7 +1155,7 @@ static void zswap_frontswap_invalidate_page(unsigned type, pgoff_t offset)
 		!work_pending(&zswap_compaction_work) &&	
 		zpool_compactable(zswap_pool, zswap_compaction_pages)) {	
 		resume = jiffies + zswap_compaction_interval * HZ;	
-		schedule_work(&zswap_compaction_work);	
+		queue_work(system_power_efficient_wq,&zswap_compaction_work);	
 	}	
 #endif
 }
