@@ -737,6 +737,7 @@ static int samsung_mbox_probe(struct platform_device *pdev)
 		case 2 :
 		case 3 :
 		case 4 :
+		default:
 			ret = of_property_read_u32_index(node, "asv_v0_mngs_margin", 0, &cl_init.atlas_margin);
 			if (ret) {
 				dev_err(&pdev->dev, "atlas_margin do not set, Set to default 0mV Value\n");

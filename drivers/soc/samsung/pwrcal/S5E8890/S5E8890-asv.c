@@ -380,7 +380,7 @@ static int get_asv_group(enum dvfs_id domain, unsigned int lv)
 
 	switch (domain) {
 	case cal_asv_dvfs_big:
-		asv = asv_tbl_info.mngs_asv_group;
+		asv = asv_tbl_info.mngs_asv_group+1;
 		mod = asv_tbl_info.mngs_modified_group;
 		break;
 	case cal_asv_dvfs_little:
@@ -392,7 +392,7 @@ static int get_asv_group(enum dvfs_id domain, unsigned int lv)
 		mod = asv_tbl_info.g3d_modified_group;
 		break;
 	case cal_asv_dvfs_mif:
-		asv = asv_tbl_info.mif_asv_group;
+		asv = asv_tbl_info.mif_asv_group+1;
 		mod = asv_tbl_info.mif_modified_group;
 		break;
 	case cal_asv_dvfs_int:

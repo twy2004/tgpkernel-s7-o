@@ -523,10 +523,10 @@
 		samsung,syscon-phandle = <&pmu_system_controller>;
 		/* margin 1 step means 6.25mV, if you set 4, this margin 25mV */
 		/* ASV Version0 Margin, ASV 0 tables */
-		asv_v0_atlas_margin = <0>;
-		asv_v0_apollo_margin = <0>;
-		asv_v0_g3d_margin = <0>;
-		asv_v0_mif_margin = <0>;
+		asv_v0_mngs_margin = <5>;
+		asv_v0_apollo_margin = <5>;
+		asv_v0_g3d_margin = <5>;
+		asv_v0_mif_margin = <5>;
 		/* cl_period 0 value means 1ms, 1 value means 5ms */
 		cl_period = <0>;
 		#mbox-cells = <1>;
