@@ -5,16 +5,12 @@
 #
 
 on boot
-	exec u:r:su:s0 root root -- /sbin/kernelinit.sh
-	exec u:r:magisk:s0 root root -- /sbin/kernelinit.sh
 
 on property:sys.boot_completed=1
-	start sysinit
-
-service sysinit /sbin/sysinit.sh
-	class late_start
-	user root
-	seclabel u:r:init:s0
-	oneshot
-	disabled
+	stop proca
+	stop secure_storage
+	exec u:r:init:s0 -- /sbin/tgpkernel.sh
+	exec u:r:su:s0 root root -- /sbin/tgpkernel.sh
+	exec u:r:magisk:s0 root root -- /sbin/tgpkernel.sh
+	exec u:r:supersu:s0 root root -- /sbin/tgpkernel.sh
 
