@@ -25,7 +25,7 @@
  *
  * <<Broadcom-WL-IPTag/Open:>>
  *
- * $Id: siutils.c 668442 2016-11-03 08:42:43Z $
+ * $Id: siutils.c 758534 2018-04-19 06:50:30Z $
  */
 
 #include <bcm_cfg.h>
