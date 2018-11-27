@@ -67,15 +67,15 @@ if [ ! -f /data/system/users/0/personalist.xml ]; then
 fi
 
 # PWMFix (0 = Disabled, 1 = Enabled)
-echo "0" > /sys/class/lcd/panel/smart_on
+echo "1" > /sys/class/lcd/panel/smart_on
 
 # Stock CPU / GPU Settings
 echo "2288000" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
 echo "208000" > /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
 echo "1586000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 echo "130000" > /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
-echo "650" > /sys/devices/14ac0000.mali/max_clock
-echo "260" > /sys/devices/14ac0000.mali/min_clock
+echo "702" > /sys/devices/14ac0000.mali/max_clock
+echo "112" > /sys/devices/14ac0000.mali/min_clock
 
 # Tweaks: SD-Card Readhead
 echo "2048" > /sys/devices/virtual/bdi/179:0/read_ahead_kb
