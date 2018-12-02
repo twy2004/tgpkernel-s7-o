@@ -297,8 +297,9 @@ static ssize_t set_volt_table(struct device *dev, struct device_attribute *attr,
 			platform->table[i + max].voltage = t[i];
 		}
 	}
-
+#ifdef CONFIG_CPU_THERMAL_IPA
 	ipa_update();
+#endif
 	spin_unlock_irqrestore(&platform->gpu_dvfs_spinlock, flags);
 
 	return count;

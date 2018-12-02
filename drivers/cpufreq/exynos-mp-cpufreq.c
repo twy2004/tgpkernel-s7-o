@@ -1690,9 +1690,9 @@ static ssize_t store_volt_table(struct kobject *kobj, struct attribute *attr,
 			exynos_info[cluster]->volt_table[i + invalid_offset] = t[i];
 		}
 	}
-
+#ifdef CONFIG_CPU_THERMAL_IPA
 	ipa_update();
-
+#endif
 	mutex_unlock(&cpufreq_lock);
 
 	return count;
