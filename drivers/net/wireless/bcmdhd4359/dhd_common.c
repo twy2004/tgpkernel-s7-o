@@ -118,8 +118,7 @@ int dhd_msg_level = DHD_ERROR_VAL | DHD_MSGTRACE_VAL | DHD_FWLOG_VAL | DHD_EVENT
 	DHD_PKT_MON_VAL;
 #else
 /* By default all logs are enabled */
-int dhd_msg_level = DHD_ERROR_VAL | DHD_MSGTRACE_VAL | DHD_FWLOG_VAL | DHD_EVENT_VAL |
-	DHD_ERROR_MEM_VAL;
+int dhd_msg_level = DHD_ERROR_VAL | DHD_ERROR_MEM_VAL;
 #endif /* defined(CUSTOMER_HW4) */
 
 
