@@ -12,6 +12,9 @@
 #include <linux/suspend.h>
 #include <linux/gpio_keys.h>
 
+
+extern void disable_nonboot_cluster_2cpus(void);
+extern void enable_nonboot_cluster_cpus(void);
 #if defined(CONFIG_SENSORS_FP_LOCKSCREEN_MODE)
 extern bool fp_lockscreen_mode;
 
@@ -63,21 +66,19 @@ static int sec_hotplug_fb_notifier(struct notifier_block *nb,
 	if (val != FB_EVENT_BLANK && val != FB_R_EARLY_EVENT_BLANK)
 		return 0;
 
-	/*
-	 * If FBNODE is not zero, it is not primary display(LCD)
-	 * and don't need to process these scheduling.
-	 */
-	if (info->node)
-		return ret;
-
 	blank = *(int *)evdata->data;
-
 	switch (blank) {
 	case FB_BLANK_POWERDOWN:
-		/* nothing */
+		disable_nonboot_cluster_2cpus();
 		break;
 	case FB_BLANK_UNBLANK:
-		/* LCD is on */
+		enable_nonboot_cluster_cpus();
+		/*
+		 * If FBNODE is not zero, it is not primary display(LCD)
+		 * and don't need to process these scheduling.
+		 */
+		if (info->node)
+			return ret;
 		set_cpu_min_on_suspend(false);
 		break;
 	default:
@@ -89,6 +90,7 @@ static int sec_hotplug_fb_notifier(struct notifier_block *nb,
 
 static struct notifier_block sec_hotplug_fb_nb = {
 	.notifier_call = sec_hotplug_fb_notifier,
+	.priority = INT_MAX,
 };
 #endif
 
