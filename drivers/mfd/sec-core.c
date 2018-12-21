@@ -582,7 +582,7 @@ static int sec_pmic_probe(struct i2c_client *i2c,
 		sec_pmic->device_type = pdata->device_type;
 		sec_pmic->ono = pdata->ono;
 		sec_pmic->irq_base = pdata->irq_base;
-		sec_pmic->wakeup = true;
+		sec_pmic->wakeup = false;
 		sec_pmic->pdata = pdata;
 		sec_pmic->irq = i2c->irq;
 	}
