@@ -2308,9 +2308,9 @@ static void set_tsp_test_result(void *device_data)
 
 	ts->nv = get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_FAC_RESULT);
 
-	snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+	snprintf(buff, sizeof(buff), "OK");
 	ts->cmd_state = CMD_STATUS_OK;
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
@@ -2351,7 +2351,7 @@ static void get_tsp_test_result(void *device_data)
 			result->module_result, result->module_count,
 			result->assy_result, result->assy_count);
 
-	snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "M:%s, M:%d, A:%s, A:%d\n",
+	snprintf(buff, sizeof(buff), "M:%s, M:%d, A:%s, A:%d\n",
 			result->module_result == 0 ? "NONE" :
 			result->module_result == 1 ? "FAIL" : "PASS", result->module_count,
 			result->assy_result == 0 ? "NONE" :
@@ -2359,7 +2359,7 @@ static void get_tsp_test_result(void *device_data)
 
 	ts->cmd_state = CMD_STATUS_OK;
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
@@ -2412,11 +2412,11 @@ static void increase_disassemble_count(void *device_data)
 	buff[0] = get_tsp_nvm_data(ts, SEC_TS_NVM_OFFSET_DISASSEMBLE_COUNT);
 	input_info(true, &ts->client->dev, "%s: check disassemble count: %d\n", __func__, buff[0]); 
 
-	snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+	snprintf(buff, sizeof(buff), "OK");
 
 	ts->cmd_state = CMD_STATUS_OK;
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
@@ -2452,9 +2452,9 @@ static void get_disassemble_count(void *device_data)
 
 	ts->cmd_state = CMD_STATUS_OK;
 	
-	snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "%d\n", buff[0]);
+	snprintf(buff, sizeof(buff), "%d\n", buff[0]);
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
@@ -2469,10 +2469,11 @@ static void glove_mode(void *device_data)
 {
 	struct sec_ts_data *ts = (struct sec_ts_data *)device_data;
 	int glove_mode_enables = 0;
+	char buff[CMD_STR_LEN] = { 0 };
 	set_default_result(ts);
 
 	if (ts->cmd_param[0] < 0 || ts->cmd_param[0] > 1) {
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		ts->cmd_state = CMD_STATUS_FAIL;
 	} else {
 		int retval;
@@ -2486,15 +2487,15 @@ static void glove_mode(void *device_data)
 
 		if (retval < 0) {
 			input_err(true, &ts->client->dev, "%s failed, retval = %d\n", __func__, retval);
-			snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+			snprintf(buff, sizeof(buff), "NG");
 			ts->cmd_state = CMD_STATUS_FAIL;
 		} else {
-			snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+			snprintf(buff, sizeof(buff), "OK");
 			ts->cmd_state = CMD_STATUS_OK;
 		}
 	}
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff,sizeof(buff)));
 
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
@@ -2510,13 +2511,14 @@ static void hover_enable(void *device_data)
 	int enables;
 	int retval;
 	struct sec_ts_data *ts = (struct sec_ts_data *)device_data;
+	char buff[CMD_STR_LEN] = { 0 };
 
 	input_info(true, &ts->client->dev, "%s: enter hover enable, param = %d\n", __func__, ts->cmd_param[0]);
 
 	set_default_result(ts);
 
 	if (ts->cmd_param[0] < 0 || ts->cmd_param[0] > 1) {
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		ts->cmd_state = CMD_STATUS_FAIL;
 	} else {
 		enables = ts->cmd_param[0];
@@ -2524,15 +2526,15 @@ static void hover_enable(void *device_data)
 
 		if (retval < 0) {
 			input_err(true, &ts->client->dev, "%s failed, retval = %d\n", __func__, retval);
-			snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+			snprintf(buff, sizeof(buff), "NG");
 			ts->cmd_state = CMD_STATUS_FAIL;
 		} else {
-			snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+			snprintf(buff, sizeof(buff), "OK");
 			ts->cmd_state = CMD_STATUS_OK;
 		}
 	}
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff,sizeof(buff)));
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
 	mutex_unlock(&ts->cmd_lock);
@@ -2800,10 +2802,10 @@ void smartcover_cmd(void *device_data)
 				if (retval < 0) {
 					input_err(true, &ts->client->dev,
 						"%s: glove mode enable failed, retval = %d\n", __func__, retval);
-					snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+					snprintf(buff, sizeof(buff), "NG");
 					ts->cmd_state = CMD_STATUS_FAIL;
 				} else {
-					snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+					snprintf(buff, sizeof(buff), "OK");
 					ts->cmd_state = CMD_STATUS_OK;
 				}
 			} else if (ts->glove_enables & (0x1 << 1)) {//SEC_TS_BIT_SETFUNC_HOVER )
@@ -2811,10 +2813,10 @@ void smartcover_cmd(void *device_data)
 				if (retval < 0)	{
 					input_err(true, &ts->client->dev,
 						"%s: hover enable failed, retval = %d\n", __func__, retval);
-					snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+					snprintf(buff, sizeof(buff), "NG");
 					ts->cmd_state = CMD_STATUS_FAIL;
 				} else {
-					snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+					snprintf(buff, sizeof(buff), "OK");
 					ts->cmd_state = CMD_STATUS_OK;
 				}
 			}
@@ -3369,16 +3371,18 @@ NG:
 static void set_wirelesscharger_mode(void *device_data)
 {
 	struct sec_ts_data *ts = (struct sec_ts_data *)device_data;
-	int ret, mode;
+	char buff[CMD_STR_LEN] = { 0 };
+	int ret;
+	bool mode;
 	u8 w_data[2]={0x00,0x00};
 
 	set_default_result(ts);
 
 	if (ts->cmd_param[0] < 0 || ts->cmd_param[0] > 5) {
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		goto OUT;
 	} else {
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+		snprintf(buff, sizeof(buff), "OK");
 	}
 
 	if (ts->cmd_param[0] == 1 || ts->cmd_param[0] == 3 || ts->cmd_param[0] == 5)
@@ -3388,7 +3392,7 @@ static void set_wirelesscharger_mode(void *device_data)
 
 	if(ts->power_status == SEC_TS_STATE_POWER_OFF) {
 		input_err(true, &ts->client->dev, "%s: fail to enable w-charger status, POWER_STATUS=OFF \n",__func__);
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		goto NG;
 	}
 
@@ -3397,7 +3401,7 @@ static void set_wirelesscharger_mode(void *device_data)
 	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_CHARGERTYPE, w_data, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Failed to send command 74", __func__);
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		goto NG;
 	}
 
@@ -3409,7 +3413,7 @@ static void set_wirelesscharger_mode(void *device_data)
 	ret = ts->sec_ts_i2c_write(ts, SEC_TS_CMD_SET_TOUCHFUNCTION, &ts->touch_functions, 1);
 	if (ret < 0) {
 		input_err(true, &ts->client->dev, "%s: Failed to send command 63", __func__);
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		goto NG;
 	}
 
@@ -3419,7 +3423,7 @@ NG:
 	  input_err(true, &ts->client->dev, "%s: %s, status =%x\n",
 	   __func__, (mode) ? "wireless enable" : "wireless disable", ts->touch_functions);
 OUT:
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
@@ -4044,20 +4048,21 @@ static void brush_enable(void *device_data)
 {
 	struct sec_ts_data *ts = (struct sec_ts_data *)device_data;
 	set_default_result(ts);
+	char buff[CMD_STR_LEN] = { 0 };
 
 	if (ts->cmd_param[0] < 0 || ts->cmd_param[0] > 1) {
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		ts->cmd_state = CMD_STATUS_FAIL;
 	} else {
 		if (ts->brush_enable != (ts->cmd_param[0] ? true : false)) {
 					ts->brush_enable = ts->cmd_param[0] ? true : false;
 		}
 		input_err(true, &ts->client->dev, "%s enable ts = %d \n", __func__, ts->brush_enable );
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+		snprintf(buff, sizeof(buff), "OK");
 		ts->cmd_state = CMD_STATUS_OK;
 	}
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
 	mutex_unlock(&ts->cmd_lock);
@@ -4072,9 +4077,10 @@ static void velocity_enable(void *device_data)
 
 	struct sec_ts_data *ts = (struct sec_ts_data *)device_data;
 	set_default_result(ts);
+	char buff[CMD_STR_LEN] = { 0 };
 
 	if (ts->cmd_param[0] < 0 || ts->cmd_param[0] > 1) {
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "NG");
+		snprintf(buff, sizeof(buff), "NG");
 		ts->cmd_state = CMD_STATUS_FAIL;
 	} else {
 		
@@ -4082,11 +4088,11 @@ static void velocity_enable(void *device_data)
 					ts->velocity_enable = ts->cmd_param[0] ? true : false;
 		}
 		input_err(true, &ts->client->dev, " %s enable ts = %d \n", __func__, ts->velocity_enable );
-		snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "OK");
+		snprintf(buff, sizeof(buff), "OK");
 		ts->cmd_state = CMD_STATUS_OK;
 	}
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 	mutex_lock(&ts->cmd_lock);
 	ts->cmd_is_running = false;
 	mutex_unlock(&ts->cmd_lock);
@@ -4100,11 +4106,12 @@ static void velocity_enable(void *device_data)
 static void not_support_cmd(void *device_data)
 {
 	struct sec_ts_data *ts = (struct sec_ts_data *)device_data;
-
+	char buff[CMD_STR_LEN] = { 0 };
+	
 	set_default_result(ts);
-	snprintf(ts->cmd_buff, sizeof(ts->cmd_buff), "%s", tostring(NA));
+	snprintf(buff, sizeof(buff), "%s", tostring(NA));
 
-	set_cmd_result(ts, ts->cmd_buff, strlen(ts->cmd_buff));
+	set_cmd_result(ts, buff, strnlen(buff, sizeof(buff)));
 	ts->cmd_state = CMD_STATUS_NOT_APPLICABLE;
 
 	mutex_lock(&ts->cmd_lock);

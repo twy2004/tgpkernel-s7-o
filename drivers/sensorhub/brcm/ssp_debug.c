@@ -222,7 +222,6 @@ int print_mcu_debug(char *pchRcvDataFrame, int *pDataIdx,
 		int iRcvDataFrameLength)
 {
 	int iLength = 0;
-	int cur = *pDataIdx;
 #if ANDROID_VERSION < 80000
 	iLength = pchRcvDataFrame[(*pDataIdx)++];
 #else

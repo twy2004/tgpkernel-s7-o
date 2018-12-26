@@ -509,7 +509,6 @@ struct sec_ts_data {
 	unsigned char cmd_state;
 	char cmd[CMD_STR_LEN];
 	int cmd_param[CMD_PARAM_NUM];
-	char cmd_buff[CMD_STR_LEN];
 	char cmd_result[CMD_RESULT_STR_LEN];
 	int cmd_buffer_size;
 	struct mutex cmd_lock;
